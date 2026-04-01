@@ -171,6 +171,37 @@ vim.o.confirm = true
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
+-- Open netrw file explorer
+vim.keymap.set('n', '<leader>pv', vim.cmd.Ex, { desc = 'Open netrw file explorer' })
+
+-- Source/reload configuration
+vim.keymap.set('n', '<leader><CR>', '<cmd>so<CR>', { desc = 'Source configuration' })
+
+-- Quick escape from insert mode
+vim.keymap.set('i', 'jj', '<Esc>l', { desc = 'Quick escape to normal mode' })
+
+-- Half-page scroll with cursor centering
+vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'Half-page down and center' })
+vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'Half-page up and center' })
+
+-- Search navigation with centering
+vim.keymap.set('n', 'n', 'nzzzv', { desc = 'Next search result (centered)' })
+vim.keymap.set('n', 'N', 'Nzzzv', { desc = 'Previous search result (centered)' })
+
+-- Paste without overwriting register in visual mode
+vim.keymap.set('x', '<leader>p', [["_dP]], { desc = 'Paste without yanking' })
+
+-- Yank to system clipboard
+vim.keymap.set({ 'n', 'v' }, '<leader>y', [["+y]], { desc = 'Yank to clipboard' })
+vim.keymap.set('n', '<leader>Y', [["+Y]], { desc = 'Yank line to clipboard' })
+
+-- Location list navigation (using <leader>k/j to avoid window nav conflicts)
+vim.keymap.set('n', '<leader>k', '<cmd>lnext<CR>zz', { desc = 'Next location list item' })
+vim.keymap.set('n', '<leader>j', '<cmd>lprev<CR>zz', { desc = 'Previous location list item' })
+
+-- Search and replace word under cursor
+vim.keymap.set('n', '<leader>s', [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]], { desc = 'Replace word under cursor' })
+
 -- Diagnostic Config & Keymaps
 -- See :help vim.diagnostic.Opts
 vim.diagnostic.config {
@@ -258,6 +289,46 @@ require('lazy').setup({
   -- NOTE: Plugins can be added via a link or github org/name. To run setup automatically, use `opts = {}`
   { 'NMAC427/guess-indent.nvim', opts = {} },
 
+  -- Custom Plugins (ported from dotfiles)
+  { -- Harpoon - Quick file navigation
+    'ThePrimeagen/harpoon',
+    branch = 'harpoon2',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    config = function()
+      local harpoon = require 'harpoon'
+      harpoon:setup {}
+
+      -- Keymaps (using leader prefix to preserve window navigation)
+      vim.keymap.set('n', '<leader>a', function() harpoon:list():add() end, { desc = 'Harpoon: Add file' })
+      vim.keymap.set('n', '<leader>e', function() harpoon.ui:toggle_quick_menu(harpoon:list()) end, { desc = 'Harpoon: Toggle menu' })
+
+      -- Use leader + numbers for file selection
+      vim.keymap.set('n', '<leader>1', function() harpoon:list():select(1) end, { desc = 'Harpoon: File 1' })
+      vim.keymap.set('n', '<leader>2', function() harpoon:list():select(2) end, { desc = 'Harpoon: File 2' })
+      vim.keymap.set('n', '<leader>3', function() harpoon:list():select(3) end, { desc = 'Harpoon: File 3' })
+      vim.keymap.set('n', '<leader>4', function() harpoon:list():select(4) end, { desc = 'Harpoon: File 4' })
+    end,
+  },
+
+  { -- Undotree - Visualize undo history
+    'mbbill/undotree',
+    keys = {
+      { '<leader>u', vim.cmd.UndotreeToggle, desc = 'Toggle Undotree' },
+    },
+  },
+
+  { -- Trouble - Pretty diagnostics, references, quickfix
+    'folke/trouble.nvim',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    opts = {}, -- Default configuration
+    cmd = 'Trouble',
+    keys = {
+      { '<leader>xq', '<cmd>Trouble quickfix toggle<CR>', desc = 'Trouble: Quickfix' },
+      { '<leader>xw', '<cmd>Trouble diagnostics toggle<CR>', desc = 'Trouble: Workspace diagnostics' },
+      { '<leader>xd', '<cmd>Trouble diagnostics toggle filter.buf=0<CR>', desc = 'Trouble: Document diagnostics' },
+    },
+  },
+
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
   -- If you prefer to call `setup` explicitly, use:
   --    {
@@ -319,6 +390,8 @@ require('lazy').setup({
         { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } }, -- Enable gitsigns recommended keymaps first
+        { '<leader>x', group = 'Diagnostics/Trouble' },
+        { '<leader>d', group = '[D]ebug' },
         { 'gr', group = 'LSP Actions', mode = { 'n' } },
       },
     },
@@ -416,6 +489,9 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader>sc', builtin.commands, { desc = '[S]earch [C]ommands' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+
+      -- Git files (from dotfiles)
+      vim.keymap.set('n', '<C-p>', builtin.git_files, { desc = 'Search git files' })
 
       -- This runs on LSP attach per buffer (see main LSP attach function in 'neovim/nvim-lspconfig' config for more info,
       -- it is better explained there). This allows easily switching between pickers if you prefer using something else!
@@ -929,7 +1005,7 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
